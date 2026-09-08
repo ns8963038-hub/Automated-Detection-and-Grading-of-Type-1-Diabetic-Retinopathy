@@ -1,0 +1,4 @@
+| model        | architecture    |   params_M |   epochs |   minutes |   Accuracy |   Quadratic weighted kappa |   Macro F1 |   Referable DR sensitivity |
+|:-------------|:----------------|-----------:|---------:|----------:|-----------:|---------------------------:|-----------:|---------------------------:|
+| efficientnet | efficientnet_b3 |    10.7000 |       21 |   46.3500 |     0.8255 |                     0.9005 |     0.6769 |                     0.9193 |
+| baseline     | baseline_cnn    |     4.8500 |       40 |   22.2400 |     0.7818 |                     0.8706 |     0.6298 |                     0.8969 |

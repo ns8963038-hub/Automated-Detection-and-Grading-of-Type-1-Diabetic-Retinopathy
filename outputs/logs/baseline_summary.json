@@ -1,0 +1,12 @@
+{
+  "model_key": "baseline",
+  "run_name": "baseline",
+  "arch": "baseline_cnn",
+  "optimizer": "adamw",
+  "activation": "relu",
+  "best_epoch": 32,
+  "best_val_qwk": 0.8785404226423611,
+  "epochs_run": 40,
+  "minutes": 22.24,
+  "params_millions": 4.85
+}
