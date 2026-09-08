@@ -154,12 +154,24 @@ def detect_exudates(img: np.ndarray, fov: np.ndarray, disc: np.ndarray,
 
 def detect_red_lesions(img: np.ndarray, fov: np.ndarray, disc: np.ndarray,
                        vessels: np.ndarray) -> np.ndarray:
-    """Small dark spots that are darker than their local background.
+    """Small dark round spots that are not part of the vessel tree.
 
     Haemorrhages and microaneurysms absorb green strongly, so they appear as
     local minima in the green channel. Subtracting a median-filtered copy
-    removes slow illumination gradients; masking the vessel tree removes the
-    other dark structures.
+    removes slow illumination gradients.
+
+    Candidates are then accepted or rejected **per blob** rather than per
+    pixel. Two earlier pixel-wise steps were actively harmful:
+
+    * a 3x3 morphological opening erased roughly 40% of candidates, because a
+      microaneurysm is only 3-8 px across and an opening of that size erodes
+      it away entirely;
+    * deleting vessel pixels from the mask *fragmented* shapes, turning one
+      blob into several and inflating the count instead of cleaning it.
+
+    Judging whole components also allows the property that actually separates
+    these lesions from vessels: they are compact and roughly round, whereas
+    vessel fragments are elongated.
     """
     green = cv2.GaussianBlur(img[:, :, 1].astype(np.float32), (0, 0), 1.2)
     background = cv2.medianBlur(green.astype(np.uint8), 41).astype(np.float32)
@@ -169,12 +181,45 @@ def detect_red_lesions(img: np.ndarray, fov: np.ndarray, disc: np.ndarray,
     if valid.sum() < 100:
         return np.zeros(fov.shape, np.uint8)
 
-    threshold = max(11.0, float(np.percentile(darkness[valid], 99.2)))
-    mask = (((darkness > threshold) & valid).astype(np.uint8)) * 255
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
-    mask[vessels > 0] = 0
-    mask[disc > 0] = 0
-    return mask
+    # Lower than a pure high percentile: on a low-contrast retina the adaptive
+    # threshold otherwise climbs so high that nothing survives.
+    threshold = max(7.0, float(np.percentile(darkness[valid], 98.5)))
+    candidates = ((darkness > threshold) & valid).astype(np.uint8)
+    candidates = cv2.morphologyEx(candidates, cv2.MORPH_CLOSE,
+                                  np.ones((2, 2), np.uint8))
+
+    scale = img.shape[0] / 512.0
+    min_area = max(3, int(3 * scale * scale))
+    max_area = int(900 * scale * scale)
+
+    n, labels, stats, _ = cv2.connectedComponentsWithStats(candidates, 8)
+    keep = np.zeros(fov.shape, np.uint8)
+
+    for i in range(1, n):
+        area = stats[i, cv2.CC_STAT_AREA]
+        if area < min_area or area > max_area:
+            continue
+        w, h = stats[i, cv2.CC_STAT_WIDTH], stats[i, cv2.CC_STAT_HEIGHT]
+
+        # Elongation: vessel fragments are long and thin, lesions are compact.
+        if max(w, h) / max(min(w, h), 1) > 3.0:
+            continue
+
+        # Fill: a lesion fills most of its bounding box; a curved vessel
+        # segment leaves most of it empty.
+        if area / float(max(w * h, 1)) < 0.35:
+            continue
+
+        blob = labels == i
+        # Reject only if the component sits mostly on the vessel tree. Judged
+        # per blob, so a lesion touching a vessel survives intact.
+        if (blob & (vessels > 0)).sum() / float(area) > 0.5:
+            continue
+
+        keep[blob] = 255
+
+    keep[disc > 0] = 0
+    return keep
 
 
 def _count_blobs(mask: np.ndarray, min_area: int = 4) -> int:
