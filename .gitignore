@@ -1,0 +1,17 @@
+# environment
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.ipynb_checkpoints/
+
+# data and credentials -- large or private, never committed
+data/raw/
+data/processed/
+kaggle.json
+
+# trained weights are tens of MB; regenerate with `make train`
+outputs/models/*.pt
+
+# Logs, metrics and figures ARE committed: they are the results the report
+# cites, and they are small.
