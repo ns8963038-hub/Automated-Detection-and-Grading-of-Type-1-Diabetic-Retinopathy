@@ -50,38 +50,85 @@ browser. `download_data.py` therefore defaults to a complete mirror of the same
 3,662 images (`mariaherrerot/aptos2019`) that needs only a logged-in CLI. The
 script verifies the grade counts against the official distribution either way.
 
-## Setup
+## Quick start - just run the demo
+
+You do **not** need the 8 GB dataset to try the model. Clone, install, pull the
+trained weights, and run:
+
+**macOS / Linux**
 
 ```bash
-python3.14 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/kaggle auth login          # one-time browser login
+git clone https://github.com/ns8963038-hub/Automated-Detection-and-Grading-of-Type-1-Diabetic-Retinopathy.git
+cd Automated-Detection-and-Grading-of-Type-1-Diabetic-Retinopathy
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python -m src.download_weights
+streamlit run app/app.py
+```
+
+**Windows (PowerShell)**
+
+```powershell
+git clone https://github.com/ns8963038-hub/Automated-Detection-and-Grading-of-Type-1-Diabetic-Retinopathy.git
+cd Automated-Detection-and-Grading-of-Type-1-Diabetic-Retinopathy
+py -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python -m src.download_weights
+streamlit run app/app.py
+```
+
+Full Windows instructions, including the CUDA build and common errors:
+**[docs/SETUP_WINDOWS.md](docs/SETUP_WINDOWS.md)**.
+
+![Demo application](docs/app_screenshot.png)
+
+### What each task needs
+
+| Goal | Dataset (8 GB) | Weights (60 MB) |
+|------|----------------|-----------------|
+| Run the demo on your own images | no | yes |
+| Reproduce the reported test metrics | yes | yes |
+| Retrain from scratch | yes | no |
+
+Trained weights are published as
+[release assets](https://github.com/ns8963038-hub/Automated-Detection-and-Grading-of-Type-1-Diabetic-Retinopathy/releases/tag/v1.0)
+rather than committed, so clones stay small. `python -m src.download_weights`
+fetches them into `outputs/models/`.
+
+## Full setup (for training)
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+kaggle auth login                    # one-time browser login
 ```
 
 ## Pipeline
 
 ```bash
 # 1. Download (~8.6 GB)
-.venv/bin/python -m src.download_data
+python -m src.download_data
 
 # 2. Preprocess and build the stratified 70/15/15 split
-.venv/bin/python -m src.preprocess
+python -m src.preprocess
 
 # 3. Train
-.venv/bin/python -m src.train --model baseline       # from-scratch CNN
-.venv/bin/python -m src.train --model efficientnet   # transfer learning
+python -m src.train --model baseline       # from-scratch CNN
+python -m src.train --model efficientnet   # transfer learning
 
 # 4. Evaluate on the held-out test split
-.venv/bin/python -m src.evaluate --model efficientnet
+python -m src.evaluate --model efficientnet
 
 # 5. Demo
-.venv/bin/streamlit run app/app.py
+streamlit run app/app.py
 ```
 
 Quick end-to-end smoke test before committing to a full run:
 
 ```bash
-.venv/bin/python -m src.train --model efficientnet --epochs 2 --limit 64
+python -m src.train --model efficientnet --epochs 2 --limit 64
 ```
 
 ## Preprocessing
@@ -286,18 +333,24 @@ is the most convincing thing to show in a demo.
 
 ```
 src/
-  config.py         all hyperparameters and paths
-  download_data.py  stage 1
-  preprocess.py     stage 2 + 3
-  dataset.py        Dataset, augmentations, class weights
-  models.py         stages 4/5/6
-  engine.py         train/eval loops, metrics
-  train.py          training entry point
-  evaluate.py       test-set metrics and figures
-  gradcam.py        explainability
-  predict.py        single-image inference
-app/app.py          Streamlit demo
-outputs/            checkpoints, figures, logs
+  config.py           all hyperparameters and paths
+  utils.py            seeding and reproducibility helpers
+  download_data.py    stage 1
+  download_weights.py fetch trained checkpoints from the release
+  preprocess.py       stage 2 + 3
+  dataset.py          Dataset, augmentations, class weights
+  models.py           stages 4/5/6
+  engine.py           train/eval loops, metrics
+  train.py            training entry point
+  evaluate.py         test-set metrics and figures
+  compare.py          model comparison table and figure
+  ablation.py         optimizer / activation sweeps
+  eda.py              dataset-chapter figures
+  gradcam.py          explainability
+  predict.py          single-image inference
+app/app.py            Streamlit demo
+docs/SETUP_WINDOWS.md Windows setup guide
+outputs/              figures and metrics (weights via release)
 ```
 
 ## Disclaimer
