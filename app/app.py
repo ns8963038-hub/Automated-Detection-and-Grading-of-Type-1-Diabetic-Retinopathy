@@ -163,6 +163,27 @@ def build_css(dark: bool) -> str:
 }}
 .dr-legend span {{ font-size: 13px; color: var(--ink-2); }}
 
+/* ---------- findings ---------- */
+.dr-find {{
+  display: flex; align-items: baseline; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}}
+.dr-find:last-child {{ border-bottom: 0; }}
+.dr-find .sw {{
+  width: 11px; height: 11px; border-radius: 3px;
+  background: var(--accent); flex-shrink: 0; align-self: center;
+}}
+.dr-find .nm {{ font-size: 14px; font-weight: 600; color: var(--ink); flex: 1; }}
+.dr-find .ct {{
+  font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums;
+  width: 78px; text-align: right;
+}}
+.dr-find .en {{
+  font-size: 13px; font-weight: 700; width: 96px; text-align: right;
+  font-variant-numeric: tabular-nums; color: var(--ink);
+}}
+.dr-why {{ font-size: 12.5px; color: var(--ink-3); margin: 2px 0 0 23px; }}
+
 /* ---------- misc ---------- */
 .dr-step {{
   font-size: 12px; color: var(--ink-3); text-transform: uppercase;
@@ -275,6 +296,11 @@ with st.sidebar:
         "Grad-CAM explanation", value=True,
         help="Highlight the retinal regions that drove the predicted grade.",
     )
+    show_lesions = st.toggle(
+        "Lesion analysis", value=True,
+        help="Detect the retinal features a clinician grades on, and measure "
+             "how concentrated each one is where the model looked.",
+    )
 
     st.divider()
     st.subheader("Severity scale")
@@ -331,7 +357,8 @@ else:
     raw = cv2.cvtColor(decoded, cv2.COLOR_BGR2RGB)
 
 with st.spinner("Analysing retinal image..."):
-    res = predict(raw, model_key=model_key, with_cam=show_cam)
+    res = predict(raw, model_key=model_key, with_cam=show_cam,
+                  with_lesions=show_lesions)
 
 # --- result first: it is what the user came for ------------------------
 left, right = st.columns([1, 1], gap="large")
@@ -409,6 +436,76 @@ if show_cam:
             "This turns a black-box score into something a clinician can "
             "argue with."
         )
+
+# --- what the model was looking at ---------------------------------------
+if show_lesions and res.get("lesions"):
+    st.divider()
+    st.subheader("What is in the region the model focused on")
+
+    lesions = res["lesions"]
+    left, right = st.columns([1, 1], gap="large")
+
+    with left:
+        st.image(res["lesion_overlay"], width="stretch")
+        st.markdown(
+            caption("Detected features",
+                    "Red = microaneurysms and haemorrhages. "
+                    "Yellow = hard exudates. Blue = vasculature, shown for "
+                    "orientation."),
+            unsafe_allow_html=True,
+        )
+
+    with right:
+        if lesions["sparse"]:
+            st.markdown(
+                f'<div class="dr"><div class="dr-note">'
+                f"Only {lesions['total_lesions']} candidate lesions were found. "
+                f"For a low grade that is the explanation. For a high one it "
+                f"means the model is relying on features these detectors do "
+                f"not capture - subtle texture, colour or vessel calibre - so "
+                f"read the Grad-CAM map rather than this panel."
+                f"</div></div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            rows = []
+            for f in lesions["findings"]:
+                enrich = f.get("enrichment", 0.0)
+                verdict = ("concentrated here" if enrich >= 1.35
+                           else "evenly spread" if enrich >= 0.75
+                           else "mostly elsewhere")
+                rgb = f["colour"]
+                rows.append(
+                    f'<div class="dr-find" style="--accent:rgb{rgb}">'
+                    f'<div class="sw"></div>'
+                    f'<div class="nm">{f["short"]}</div>'
+                    f'<div class="ct">{f["count"]} found</div>'
+                    f'<div class="en">{enrich:.1f}x</div></div>'
+                    f'<div class="dr-why">{verdict} &middot; {f["meaning"]}</div>'
+                )
+            st.markdown(f'<div class="dr">{"".join(rows)}</div>',
+                        unsafe_allow_html=True)
+
+        with st.expander("How to read this, and what it does not prove"):
+            st.markdown(
+                "**The multiplier** is how concentrated a feature is inside "
+                "the quarter of the retina the model attended to, against its "
+                "average density over the whole retina. `2.0x` means twice as "
+                "dense there as elsewhere; `1.0x` means no more than you would "
+                "expect by area.\n\n"
+                "**These are not the model's reasons.** APTOS 2019 provides "
+                "image-level grades only, with no lesion annotations, so "
+                "nothing here is a trained detector - they are classical "
+                "image-processing rules. What the panel shows is a "
+                "*correlation* between independently detected lesions and "
+                "where the network looked. A high multiplier is evidence the "
+                "model attended to clinically meaningful structures; a low one "
+                "means either the detectors missed something or the model used "
+                "features they cannot see.\n\n"
+                "**The optic disc is excluded** from both detectors. It is "
+                "naturally bright and yellow, so it would otherwise dominate "
+                "the exudate count on every single image."
+            )
 
 st.divider()
 st.markdown(

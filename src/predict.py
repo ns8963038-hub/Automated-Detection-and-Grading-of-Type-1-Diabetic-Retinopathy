@@ -14,6 +14,7 @@ import torch
 from src import config as C
 from src.dataset import eval_transform
 from src.gradcam import GradCAM, overlay_heatmap
+from src.lesions import explain as explain_lesions, overlay_lesions
 from src.models import build_model, get_device
 from src.preprocess import preprocess_image
 
@@ -61,13 +62,15 @@ def available_models() -> list[str]:
 
 
 def predict(image_rgb: np.ndarray, model_key: str = C.DEFAULT_MODEL,
-            with_cam: bool = True) -> dict:
+            with_cam: bool = True, with_lesions: bool = False) -> dict:
     """Grade one fundus image.
 
     Args:
         image_rgb: raw uploaded image as an HxWx3 RGB uint8 array.
         model_key: which trained checkpoint to use.
         with_cam:  also compute the Grad-CAM explanation.
+        with_lesions: also run the classical lesion detectors and report how
+            strongly each type is enriched inside the attended region.
 
     Returns a dict with the predicted grade, per-class probabilities, the
     preprocessed image, and (optionally) the heatmap overlay.
@@ -99,6 +102,15 @@ def predict(image_rgb: np.ndarray, model_key: str = C.DEFAULT_MODEL,
             probs = torch.softmax(logits, dim=1)[0].cpu().numpy()
             pred = int(probs.argmax())
 
+    if with_lesions:
+        # Detectors run on the original image, not the preprocessed one: the
+        # training-time enhancement recentres every image on mid-grey, which
+        # destroys the hue difference between yellow exudates and red
+        # haemorrhages that the detectors rely on.
+        lesions = explain_lesions(image_rgb, result.get("heatmap"))
+        result["lesions"] = lesions
+        result["lesion_overlay"] = overlay_lesions(lesions["image"], lesions["masks"])
+
     result.update({
         "grade": int(pred),
         "label": C.CLASS_NAMES[pred],
@@ -112,9 +124,10 @@ def predict(image_rgb: np.ndarray, model_key: str = C.DEFAULT_MODEL,
 
 
 def predict_file(path: str | Path, model_key: str = C.DEFAULT_MODEL,
-                 with_cam: bool = True) -> dict:
+                 with_cam: bool = True, with_lesions: bool = False) -> dict:
     import cv2
     img = cv2.imread(str(path), cv2.IMREAD_COLOR)
     if img is None:
         raise ValueError(f"Could not read image: {path}")
-    return predict(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), model_key, with_cam)
+    return predict(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), model_key,
+                   with_cam, with_lesions)

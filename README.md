@@ -329,6 +329,62 @@ map. It turns "the model says grade 3" into "the model says grade 3 because of
 these lesions", which is what makes the output defensible to a clinician and
 is the most convincing thing to show in a demo.
 
+## What drove a prediction
+
+Grad-CAM says *where* the network looked. `src/lesions.py` addresses *what is
+there*, by detecting the features the international grading scale is actually
+built on and measuring how concentrated each one is inside the attended
+region.
+
+| Feature | Why it matters clinically |
+|---------|---------------------------|
+| **Microaneurysms / haemorrhages** | Earliest and most decisive sign of DR; their number and spread drive grades 1-3 |
+| **Hard exudates** | Yellow lipid deposits from leaking capillaries; near the macula they threaten vision directly |
+| **Vasculature** | Detected to keep vessels out of the red-lesion mask, and drawn for orientation |
+
+Detection is classical image processing, run on the *original* image rather
+than the preprocessed one - the Ben Graham step recentres every image on
+mid-grey, destroying the hue difference between yellow exudates and red
+haemorrhages that the detectors depend on. The optic disc is masked out of
+both detectors; it is naturally bright and yellow and would otherwise dominate
+the exudate count on every image.
+
+The reported multiplier is an **enrichment ratio**: lesion density inside the
+most-attended quarter of the retina, divided by density across the whole
+retina. A ratio rather than a raw overlap, because a heatmap covering a
+quarter of the image would otherwise appear to "explain" everything simply by
+being large. `2.0x` means twice as dense in the attended region as elsewhere.
+
+### Validation
+
+Detector output across 12 test images per grade, showing the counts rise with
+severity as they should:
+
+| Grade | Exudates (% area) | Exudate count | Red lesions (% area) | Red lesion count |
+|-------|-------------------|---------------|----------------------|------------------|
+| 0 | 0.153 | 4.5 | 0.042 | 4.5 |
+| 1 | 0.300 | 5.9 | 0.051 | 4.9 |
+| 2 | 0.229 | 8.8 | 0.102 | 7.5 |
+| 3 | 0.292 | 6.9 | 0.108 | 10.5 |
+| 4 | 0.386 | 9.1 | 0.118 | 11.1 |
+
+Red lesion burden is monotonic across all five grades, rising 2.8x from grade
+0 to grade 4 - which is exactly the criterion the clinical scale is built on.
+
+### What this does not prove
+
+APTOS 2019 carries **image-level grades only, with no lesion annotations**, so
+none of these are trained detectors and none of this is a readout of the
+model's reasoning. It is a *correlation* between independently detected
+lesions and where the network looked.
+
+A high multiplier is evidence the model attended to clinically meaningful
+structures. A low one means either the detectors missed something or the model
+used features they cannot see - subtle texture, colour or vessel calibre. Both
+happen in the test set, and the app reports the sparse case explicitly rather
+than inventing an explanation. Training a genuine lesion detector would need a
+pixel-annotated dataset such as IDRiD.
+
 ## Project layout
 
 ```
@@ -346,7 +402,8 @@ src/
   compare.py          model comparison table and figure
   ablation.py         optimizer / activation sweeps
   eda.py              dataset-chapter figures
-  gradcam.py          explainability
+  gradcam.py          Grad-CAM: where the model looked
+  lesions.py          what is there: lesion detection + enrichment
   predict.py          single-image inference
 app/app.py            Streamlit demo
 docs/SETUP_WINDOWS.md Windows setup guide
