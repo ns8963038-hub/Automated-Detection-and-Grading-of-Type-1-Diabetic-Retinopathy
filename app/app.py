@@ -39,53 +39,73 @@ st.set_page_config(
 # Status colours appear only in the verdict, one at a time, and always beside
 # the grade name -- colour never carries the meaning alone.
 # --------------------------------------------------------------------------
-LIGHT = {
-    "surface": "#fcfcfb", "raised": "#ffffff", "border": "#e6e6e3",
-    "ink": "#0b0b0b", "ink2": "#52514e", "ink3": "#86857f",
-    "ord": ["#86b6ef", "#5598e7", "#2a78d6", "#1c5cab", "#104281"],
-}
-DARK = {
-    "surface": "#1a1a19", "raised": "#232322", "border": "#383834",
-    "ink": "#ffffff", "ink2": "#c3c2b7", "ink3": "#8b8a80",
-    "ord": ["#184f95", "#256abf", "#3987e5", "#6da7ec", "#9ec5f4"],
-}
+# --------------------------------------------------------------------------
+# Design tokens
+#
+# Structural colours (surfaces, borders, text) are deliberately theme-agnostic:
+# translucent neutrals over whatever Streamlit paints, and `currentColor` for
+# text. They therefore render correctly in light and dark without any theme
+# detection, and a wrong guess can never produce invisible text.
+#
+# Only the ordinal ramp needs to know the theme. The five DR grades are ordered
+# tiers, so the bars use one hue stepped light-to-dark. No single five-step
+# ramp clears the 2:1 floor against both a white and a near-black surface -
+# the usable band is too narrow - so each mode gets its own, and both were
+# checked with a palette validator for monotone lightness, adjacent dL >= 0.06,
+# single hue, and surface contrast.
+# --------------------------------------------------------------------------
+ORD_LIGHT = ["#86b6ef", "#5598e7", "#2a78d6", "#1c5cab", "#104281"]
+ORD_DARK = ["#184f95", "#256abf", "#3987e5", "#6da7ec", "#9ec5f4"]
 
 
 def theme_is_dark() -> bool:
-    """Read Streamlit's own theme.
+    """Whether Streamlit is currently rendering dark.
 
-    Streamlit's light/dark setting is independent of the operating system's
-    `prefers-color-scheme`, so a media query would get this wrong whenever the
-    two disagree. Ask Streamlit directly and fall back to light.
+    Two sources, and they disagree in a way that matters:
+
+    * `st.get_option("theme.base")` is the *configured* theme. It is None when
+      the app has not set one, and wins whenever it is set.
+    * `st.context.theme` reports the *browser's* preference, which Streamlit
+      follows only when nothing is configured. Reading this one alone paints
+      dark components onto a light page whenever the user's OS is dark but the
+      app is configured light.
     """
     try:
+        base = st.get_option("theme.base")
+        if isinstance(base, str) and base.lower() in ("light", "dark"):
+            return base.lower() == "dark"
+    except Exception:
+        pass
+    try:
         theme = st.context.theme
-        kind = theme.get("type") if isinstance(theme, dict) else getattr(theme, "type", None)
+        kind = (theme.get("type") if isinstance(theme, dict)
+                else getattr(theme, "type", None))
         return kind == "dark"
     except Exception:
         return False
 
 
 def build_css(dark: bool) -> str:
-    t = DARK if dark else LIGHT
-    ords = "".join(f"  --ord-{i + 1}: {c};\n" for i, c in enumerate(t["ord"]))
+    ramp = ORD_DARK if dark else ORD_LIGHT
+    ords = "".join(f"  --ord-{i + 1}: {c};\n" for i, c in enumerate(ramp))
     return f"""
 <style>
 .dr {{
-  --surface: {t['surface']};
-  --raised:  {t['raised']};
-  --border:  {t['border']};
-  --ink:     {t['ink']};
-  --ink-2:   {t['ink2']};
-  --ink-3:   {t['ink3']};
+  /* Neutrals that read correctly on any background Streamlit provides. */
+  --raised:  color-mix(in srgb, currentColor 5%, transparent);
+  --border:  color-mix(in srgb, currentColor 22%, transparent);
+  --track:   color-mix(in srgb, currentColor 16%, transparent);
+  --ink:     currentColor;
+  --ink-2:   color-mix(in srgb, currentColor 72%, transparent);
+  --ink-3:   color-mix(in srgb, currentColor 52%, transparent);
 {ords}}}
 
 /* ---------- verdict ---------- */
 .dr-verdict {{
   display: flex; align-items: center; gap: 20px;
   padding: 22px 26px; border-radius: 12px;
-  background: color-mix(in srgb, var(--accent) 8%, var(--raised));
-  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
   border-left: 7px solid var(--accent);
 }}
 .dr-dot {{
@@ -106,10 +126,9 @@ def build_css(dark: bool) -> str:
 .dr-refer {{
   display: flex; align-items: center; gap: 10px;
   margin-top: 12px; padding: 11px 16px; border-radius: 9px;
-  font-size: 14px; font-weight: 600;
-  background: color-mix(in srgb, var(--accent) 12%, var(--raised));
-  color: var(--ink);
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  font-size: 14px; font-weight: 600; color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
 }}
 .dr-refer .tag {{
   font-size: 11px; font-weight: 800; letter-spacing: 0.07em;
@@ -125,7 +144,7 @@ def build_css(dark: bool) -> str:
 }}
 .dr-track {{
   flex: 1; min-width: 50px; height: 17px;
-  background: var(--border); border-radius: 4px; overflow: hidden;
+  background: var(--track); border-radius: 4px; overflow: hidden;
 }}
 .dr-fill {{ height: 100%; border-radius: 4px; }}
 .dr-val {{
