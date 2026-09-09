@@ -15,3 +15,6 @@ outputs/models/*.pt
 
 # Logs, metrics and figures ARE committed: they are the results the report
 # cites, and they are small.
+
+# intermediate build product of docs/make_report.py
+docs/project_report.html
