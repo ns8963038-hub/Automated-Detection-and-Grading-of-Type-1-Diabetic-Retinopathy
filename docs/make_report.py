@@ -113,7 +113,17 @@ td { padding: 4.5pt 7pt; border-bottom: 1px solid #e6e7ea; vertical-align: top; 
 tr:nth-child(even) td { background: #fafbfc; }
 figure { margin: 10pt 0 13pt; break-inside: avoid; text-align: center; }
 figure img {
-  max-width: 100%; border: 1px solid #e2e4e8; border-radius: 4px;
+  max-width: 100%;
+  /* A4 leaves ~264mm of usable height; a figure also needs room for its
+     caption. Two figures (the Grad-CAM grid and the lesion examples) are
+     taller than that at full width, and without a cap the print engine
+     splits them across pages, cutting images in half. Capping the height
+     makes tall figures narrower instead of broken.
+     190mm rather than the ~224mm that would just fit: the smaller cap lets
+     adjacent text share the page, which removed two near-empty pages. */
+  max-height: 190mm;
+  width: auto; height: auto;
+  border: 1px solid #e2e4e8; border-radius: 4px;
 }
 figcaption {
   font-size: 8.6pt; color: #62646a; margin-top: 4pt; font-style: italic;
