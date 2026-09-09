@@ -329,7 +329,7 @@ the checkpoint, and the data it had never seen.</p>
   "What the network memorised. <b>Not a performance figure</b> - it only shows how well the weights fit the data they were optimised on."],
  ["Validation", f"{val_acc:.1%}", "550",
   "Used to choose the epoch and trigger early stopping, so it is optimistically biased."],
- ["<b>Test</b>", f"<b>{{eff['accuracy']:.1%}}</b>", "550",
+ ["<b>Test</b>", f"<b>{eff['accuracy']:.1%}</b>", "550",
   "<b>The reported result.</b> Touched once, after every decision was locked in."],
 ], ["Split", "Accuracy", "Images", "What it means"])}
 
