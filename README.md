@@ -89,6 +89,20 @@ Full Windows instructions, including the CUDA build and common errors:
 
 ![Demo application](docs/app_screenshot.png)
 
+### Launching it again later
+
+Once set up, the venv, weights and dataset all persist. To run it again:
+
+```powershell
+cd <project folder>
+.venv\Scripts\activate      # macOS/Linux: source .venv/bin/activate
+streamlit run app/app.py
+```
+
+Or just double-click **`run_app.bat`** (Windows) or **`run_app.command`**
+(macOS). Both change to their own directory first, so they work wherever the
+project folder lives, and they fetch the weights if those are missing.
+
 ### What each task needs
 
 | Goal | Dataset (8 GB) | Weights (60 MB) |
