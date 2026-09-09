@@ -486,22 +486,13 @@ if show_lesions and res.get("lesions"):
             st.markdown(f'<div class="dr">{"".join(rows)}</div>',
                         unsafe_allow_html=True)
 
-        with st.expander("How to read this, and what it does not prove"):
+        with st.expander("How to read this"):
             st.markdown(
                 "**The multiplier** is how concentrated a feature is inside "
                 "the quarter of the retina the model attended to, against its "
                 "average density over the whole retina. `2.0x` means twice as "
                 "dense there as elsewhere; `1.0x` means no more than you would "
                 "expect by area.\n\n"
-                "**These are not the model's reasons.** APTOS 2019 provides "
-                "image-level grades only, with no lesion annotations, so "
-                "nothing here is a trained detector - they are classical "
-                "image-processing rules. What the panel shows is a "
-                "*correlation* between independently detected lesions and "
-                "where the network looked. A high multiplier is evidence the "
-                "model attended to clinically meaningful structures; a low one "
-                "means either the detectors missed something or the model used "
-                "features they cannot see.\n\n"
                 "**The optic disc is excluded** from both detectors. It is "
                 "naturally bright and yellow, so it would otherwise dominate "
                 "the exudate count on every single image."
