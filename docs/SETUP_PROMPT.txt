@@ -1,0 +1,100 @@
+Set up and run a Python deep-learning project on this Windows laptop. Work
+through the steps in order and verify each one before moving on. Tell me what
+you find rather than assuming.
+
+WHAT IS ALREADY ON THIS MACHINE
+- Python 3.14 is installed and on PATH (`py --version` works).
+- Git is NOT installed. Do not use git commands; everything needed is already
+  downloaded as ZIP files.
+- A ZIP of the project has been downloaded from GitHub and extracted. The
+  folder name ends in "-main" and looks like:
+  Automated-Detection-and-Grading-of-Type-1-Diabetic-Retinopathy-main
+- A ZIP of the APTOS 2019 dataset has been downloaded from Kaggle and may or
+  may not be extracted yet. It contains a folder of .png fundus images.
+
+IMPORTANT: this machine has OneDrive folder redirection enabled, so the
+Desktop is NOT at C:\Users\<name>\Desktop. It is at
+C:\Users\<name>\OneDrive\Desktop. Do not assume either path -- search for the
+folders and report the real paths before using them.
+
+STEP 1 - LOCATE THE PROJECT
+Search the user profile for the extracted project folder:
+    cd %USERPROFILE%
+    dir /s /b /ad *Diabetic-Retinopathy*
+Change into the folder it reports. If it reports two nested folders with the
+same name, use the deeper one. Then confirm you are in the right place:
+    dir
+You must see README.md, requirements.txt, and folders named src and app. If
+you do not see all four, STOP and tell me -- do not run anything else, because
+every later command will fail in a way that points at the wrong problem.
+
+STEP 2 - VIRTUAL ENVIRONMENT
+From inside that folder:
+    py -m venv .venv
+    .venv\Scripts\activate
+The prompt must now start with (.venv). If PowerShell refuses with "running
+scripts is disabled on this system", run this once and activate again:
+    Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+Alternatively use Command Prompt instead of PowerShell.
+
+STEP 3 - DEPENDENCIES
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+This downloads roughly 1.5 GB including PyTorch and takes 3-8 minutes. A lot
+of scrolling output is normal. A yellow notice about upgrading pip is
+cosmetic. Only stop if you see a red ERROR line.
+
+STEP 4 - TRAINED MODEL WEIGHTS
+    python -m src.download_weights
+This fetches two checkpoint files (about 60 MB total) from the project's
+GitHub release into outputs\models\. Confirm afterwards:
+    dir outputs\models
+You should see efficientnet_best.pt and baseline_best.pt.
+
+STEP 5 - THE DATASET IMAGES
+The application needs the fundus images at this exact path, relative to the
+project folder:
+    data\raw\train_images\
+Do this:
+  a) Find where the Kaggle dataset was extracted. Search for it:
+         cd %USERPROFILE%
+         dir /s /b /ad train_images
+     If nothing is found, the ZIP has not been extracted yet -- find the .zip
+     in Downloads, extract it, then search again.
+  b) Go back to the project folder and create the target directory:
+         mkdir data\raw
+     (data may already exist; ignore an error saying so.)
+  c) Move or copy the whole train_images folder into data\raw\ so the final
+     path is <project>\data\raw\train_images\ containing thousands of .png
+     files.
+  d) Verify, and report roughly how many files it contains:
+         dir data\raw\train_images
+Notes: only train_images is needed. If the dataset also contains test_images
+or val_images, skip them -- they are several extra GB and the demo does not
+use them. Do NOT run the preprocessing script; the app preprocesses each
+image on the fly.
+
+STEP 6 - RUN IT
+    streamlit run app/app.py
+It should print a local URL and open the browser at http://localhost:8501.
+If the browser does not open by itself, open that URL manually.
+
+WHAT SUCCESS LOOKS LIKE
+- The page title reads "Diabetic Retinopathy Grading".
+- The left sidebar shows a model selector, Val QWK 0.913 and Val acc 84.9%,
+  and the device (it will say cpu on this laptop, which is correct).
+- Below the upload box there is a dropdown labelled "...or try a sample from
+  the dataset". This dropdown ONLY appears when step 5 was done correctly, so
+  if it is missing, data\raw\train_images\ is empty or in the wrong place.
+- Selecting a sample produces a predicted grade 0-4, confidence bars, the
+  preprocessing steps, a Grad-CAM heatmap and a lesion analysis panel.
+- The first prediction takes a few seconds while the model loads; later ones
+  are faster. This laptop has no NVIDIA GPU, so it runs on CPU. That is
+  expected and fine for single-image inference.
+
+IF SOMETHING FAILS
+Report the exact error text and which step it happened on. Common causes:
+- "No module named 'src'" or "Could not open requirements file" means the
+  terminal is not in the project folder. Run dir and check for README.md.
+- "'streamlit' is not recognized" means the virtual environment is not
+  active. Check for (.venv) in the prompt.
