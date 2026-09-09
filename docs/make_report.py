@@ -137,14 +137,18 @@ figcaption {
   background: #fff8ee; border-left: 3px solid #eb8a34;
   padding: 8pt 11pt; margin: 0 0 10pt; font-size: 9.4pt; break-inside: avoid;
 }
-.kpi { display: flex; gap: 9pt; margin: 0 0 12pt; }
-.kpi div {
+.kpi { display: flex; gap: 6pt; margin: 0 0 12pt; }
+.kpi > div {
   flex: 1; border: 1px solid #dfe1e6; border-radius: 5px;
-  padding: 9pt; text-align: center; background: #fbfcfd;
+  padding: 8pt 4pt; text-align: center; background: #fbfcfd;
 }
-.kpi .v { font-size: 17pt; font-weight: 700; color: #1c5cab; }
-.kpi .l { font-size: 8.2pt; color: #62646a; text-transform: uppercase;
-          letter-spacing: 0.6pt; margin-top: 2pt; }
+/* The test figure is the reported result; the others are context. */
+.kpi > div.hero { border: 1.5px solid #2a78d6; background: #f2f7fe; }
+.kpi .v { font-size: 15pt; font-weight: 700; color: #62646a; }
+.kpi .hero .v { font-size: 17pt; color: #1c5cab; }
+.kpi .l { font-size: 7.2pt; color: #82848a; text-transform: uppercase;
+          letter-spacing: 0.4pt; margin-top: 3pt; line-height: 1.35; }
+.kpi .hero .l { color: #1c5cab; font-weight: 700; }
 .pagebreak { break-before: page; }
 .toc a { color: #14161a; text-decoration: none; }
 .toc li { margin-bottom: 4pt; }
@@ -314,10 +318,11 @@ automatically, and to explain each decision rather than emitting a bare
 number.</p>
 
 <div class="kpi">
-  <div><div class="v">{eff['qwk']:.3f}</div><div class="l">Quadratic weighted kappa</div></div>
-  <div><div class="v">{eff['accuracy']:.1%}</div><div class="l">Test accuracy</div></div>
-  <div><div class="v">{eff['referable_sensitivity']:.1%}</div><div class="l">Referable DR sensitivity</div></div>
-  <div><div class="v">{total:,}</div><div class="l">Images</div></div>
+  <div><div class="v">{eff['qwk']:.3f}</div><div class="l">Quadratic<br>weighted kappa</div></div>
+  <div><div class="v">{train_acc:.1%}</div><div class="l">Training<br>accuracy</div></div>
+  <div><div class="v">{val_acc:.1%}</div><div class="l">Validation<br>accuracy</div></div>
+  <div class="hero"><div class="v">{eff['accuracy']:.1%}</div><div class="l">Test<br>accuracy</div></div>
+  <div><div class="v">{eff['referable_sensitivity']:.1%}</div><div class="l">Referable DR<br>sensitivity</div></div>
 </div>
 
 <h3>How the model performs across the three splits</h3>
