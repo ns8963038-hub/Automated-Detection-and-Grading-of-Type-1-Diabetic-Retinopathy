@@ -78,6 +78,12 @@ python -m src.download_weights
 streamlit run app/app.py
 ```
 
+No Git installed? Use the green **Code -> Download ZIP** button instead of
+`git clone`, then `cd` into the extracted folder. Run `dir` (Windows) or `ls`
+and confirm you see `README.md` and `src` before continuing - if the download
+or clone failed, every later command fails in a way that points at the wrong
+problem.
+
 Full Windows instructions, including the CUDA build and common errors:
 **[docs/SETUP_WINDOWS.md](docs/SETUP_WINDOWS.md)**.
 

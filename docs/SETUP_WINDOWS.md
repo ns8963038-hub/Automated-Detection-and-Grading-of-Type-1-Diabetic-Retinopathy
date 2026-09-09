@@ -32,13 +32,46 @@ py --version
 
 ## 2. Get the code
 
+**Option A - download the ZIP (no Git needed, recommended)**
+
+1. Open the
+   [repository page](https://github.com/ns8963038-hub/Automated-Detection-and-Grading-of-Type-1-Diabetic-Retinopathy)
+2. Green **Code** button -> **Download ZIP**
+3. Extract it to your Desktop. The extracted folder keeps a `-main` suffix.
+4. Point the terminal at it:
+
+```powershell
+cd $env:USERPROFILE\Desktop\Automated-Detection-and-Grading-of-Type-1-Diabetic-Retinopathy-main
+```
+
+**Option B - clone with Git**
+
+Only if Git is installed. Check with `git --version`; if that errors, use
+Option A or install Git from [git-scm.com](https://git-scm.com/download/win)
+and **open a new terminal** afterwards, because PATH changes only apply to new
+windows.
+
 ```powershell
 git clone https://github.com/ns8963038-hub/Automated-Detection-and-Grading-of-Type-1-Diabetic-Retinopathy.git
 cd Automated-Detection-and-Grading-of-Type-1-Diabetic-Retinopathy
 ```
 
-No Git? Install from [git-scm.com](https://git-scm.com/download/win), or use
-the green **Code -> Download ZIP** button on the repository page and extract it.
+### Check you are in the right folder before going further
+
+```powershell
+dir
+```
+
+You should see `README.md`, `requirements.txt`, `src` and `app` listed. **If
+you do not, stop here** - every command below will fail, and they fail in ways
+that point at the wrong problem.
+
+> This is the single most common way the setup goes wrong. If `git clone`
+> fails because Git is not installed, no folder is created, the following `cd`
+> also fails, and the terminal stays in your home directory. The commands after
+> that then report *"Could not open requirements file"*, *"No module named
+> 'src'"* and *"streamlit is not recognized"* - three unrelated-looking errors
+> that all trace back to the clone never having happened.
 
 ## 3. Create the virtual environment
 
@@ -157,8 +190,14 @@ python -m src.train --model efficientnet --epochs 2 --limit 64 --workers 0
 Re-run the installer, choose Modify, and enable it. Or use `py` instead.
 
 **`ModuleNotFoundError: No module named 'src'`** - You are not in the project
-root. `cd` into the folder containing `README.md` and run modules with
-`python -m src.<name>`, not `python src\<name>.py`.
+root. Run `dir`: if it does not list `README.md` and `src`, `cd` to the folder
+that does. Run modules as `python -m src.<name>`, not `python src\<name>.py`.
+
+**`'git' is not recognized`** - Git is not installed. Use the ZIP download in
+step 2 instead; nothing in this project needs Git to run.
+
+**`Could not open requirements file`** - Same cause as above: the terminal is
+not in the project folder. Check with `dir`.
 
 **`No trained model found` in the app** - Step 5 has not run, or the files
 landed elsewhere. Check that `outputs\models\efficientnet_best.pt` exists.
