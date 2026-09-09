@@ -157,6 +157,17 @@ def build(f: dict) -> str:
     g, sp = f["grades"], f["splits"]
     total = f["total"]
 
+    # Training/validation accuracy at the epoch that was actually saved --
+    # later epochs reached higher training accuracy but their weights were
+    # discarded by early stopping, so quoting those would describe a model
+    # that was never shipped.
+    hist = f["efficientnet_hist"]
+    best_row = hist.loc[hist.val_qwk.idxmax()]
+    train_acc = float(best_row.train_accuracy)
+    val_acc = float(best_row.val_accuracy)
+    best_ep = int(best_row.epoch)
+    gap_pp = 100.0 * (train_acc - eff["accuracy"])
+
     grade_rows = [
         [f"<b>{i}</b>", C.CLASS_NAMES[i].split(" - ")[1],
          f"{g[i]:,}", f"{100*g[i]/total:.1f}%",
@@ -308,6 +319,28 @@ number.</p>
   <div><div class="v">{eff['referable_sensitivity']:.1%}</div><div class="l">Referable DR sensitivity</div></div>
   <div><div class="v">{total:,}</div><div class="l">Images</div></div>
 </div>
+
+<h3>How the model performs across the three splits</h3>
+<p>The same model &mdash; the epoch&nbsp;{best_ep} checkpoint that is actually
+shipped &mdash; measured on the data it learned from, the data used to pick
+the checkpoint, and the data it had never seen.</p>
+{rows([
+ ["Training", f"{train_acc:.1%}", "2,562",
+  "What the network memorised. <b>Not a performance figure</b> - it only shows how well the weights fit the data they were optimised on."],
+ ["Validation", f"{val_acc:.1%}", "550",
+  "Used to choose the epoch and trigger early stopping, so it is optimistically biased."],
+ ["<b>Test</b>", f"<b>{{eff['accuracy']:.1%}}</b>", "550",
+  "<b>The reported result.</b> Touched once, after every decision was locked in."],
+], ["Split", "Accuracy", "Images", "What it means"])}
+
+<div class="note"><b>Reading the gap.</b> Training accuracy sits about
+{gap_pp:.0f}
+points above test accuracy. That gap is the signature of a model that has
+partly memorised a small training set, and it is why the headline figure is
+the test number and never the training one. Two later experiments confirmed
+the diagnosis: neither a higher input resolution nor test-time augmentation
+produced a statistically significant gain, indicating the limit is dataset
+size and label noise rather than model capacity or image detail.</div>
 
 <h3>Objectives</h3>
 <ol>
@@ -583,6 +616,39 @@ accuracy. It also reached the baseline's best score in 4 epochs rather than
       weights all five grades equally while accuracy is flattered by grade 0
       being half the data.</li>
 </ul>
+
+<h3>Attempts to improve accuracy, and what they showed</h3>
+<p>Two standard interventions were tested against the 300&nbsp;px model. The
+TTA configuration was chosen on the <i>validation</i> set and then reported
+once on test; choosing it on test would be tuning on held-out data.</p>
+{rows([
+ ["EfficientNet-B3 @ 300 px <i>(reported model)</i>", "0.8255", "0.9005", "454 / 550", "&mdash;"],
+ ["&nbsp;&nbsp;+ test-time augmentation", "0.8218", "0.8953", "452 / 550", "&minus;2 images"],
+ ["EfficientNet-B3 @ 456 px", "0.8309", "0.9023", "457 / 550", "+3 images"],
+ ["&nbsp;&nbsp;+ test-time augmentation", "0.8273", "0.9038", "455 / 550", "+1 image"],
+], ["Configuration", "Accuracy", "QWK", "Correct", "Change"])}
+
+<p>Raising the input resolution to 456&nbsp;px cost 91 minutes of training and
+gained three images out of 550. A McNemar test on the disagreements settles
+whether that is real:</p>
+<pre><code>300px right, 456px wrong : 30
+300px wrong, 456px right : 33
+McNemar exact p = 0.801   ->  NOT significant
+
+one standard error on accuracy at n=550  =  1.6 pp  (9 images)
+observed difference                      =  0.55 pp (3 images)</code></pre>
+
+<div class="note"><b>Conclusion.</b> Neither intervention produced a
+statistically significant improvement, and test-time augmentation was actively
+harmful. The hypothesis behind the resolution experiment was that
+microaneurysms are 10-20&nbsp;px in a full-resolution image and therefore
+sub-pixel at 300&nbsp;px. That is true, but not the binding constraint: with
+training accuracy at 94% against 83% on test, the model had already fitted the
+2,562 training images. Sharper inputs added capacity to memorise, not
+information to generalise from. The limit is <b>dataset size and label
+noise</b>, so the productive next steps are ones that add data or diversity -
+model ensembling, or pretraining on the much larger 2015 Diabetic Retinopathy
+dataset - rather than ones that add detail or capacity.</div>
 
 <h2 id="s12" class="pagebreak">12 &nbsp; Explainability</h2>
 <h3>Grad-CAM — where the model looked</h3>

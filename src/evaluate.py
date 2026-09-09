@@ -145,6 +145,9 @@ def main() -> None:
                          "such as baseline_sgd_gelu.")
     ap.add_argument("--split", default="test", choices=["val", "test"])
     ap.add_argument("--workers", type=int, default=C.NUM_WORKERS)
+    ap.add_argument("--tta", type=int, default=0, metavar="N",
+                    help="Average predictions over N dihedral views "
+                         "(0 = off, 8 = full set). Costs N forward passes.")
     args = ap.parse_args()
 
     device = get_device()
@@ -160,11 +163,13 @@ def main() -> None:
     criterion = build_criterion(device, None)
 
     metrics, y_true, y_pred, probs = run_eval(
-        model, loaders[args.split], criterion, device, desc=args.split
+        model, loaders[args.split], criterion, device, desc=args.split,
+        tta=args.tta,
     )
 
+    tta_note = f"  ·  TTA x{args.tta}" if args.tta else ""
     print(f"\n{'=' * 62}")
-    print(f"  {args.model.upper()} - {args.split} set  (n={len(y_true)})")
+    print(f"  {args.model.upper()} - {args.split} set  (n={len(y_true)}){tta_note}")
     print(f"{'=' * 62}")
     print(f"  Accuracy                : {metrics['accuracy']:.4f}")
     print(f"  Quadratic Weighted Kappa: {metrics['qwk']:.4f}")
@@ -195,11 +200,12 @@ def main() -> None:
         "per_class": report,
         "confusion_matrix": cm.tolist(),
     }
-    out = C.LOG_DIR / f"{args.model}_{args.split}_results.json"
+    suffix = f"_tta{args.tta}" if args.tta else ""
+    out = C.LOG_DIR / f"{args.model}_{args.split}{suffix}_results.json"
     out.write_text(json.dumps(results, indent=2))
     print(f"  results -> {out}")
 
-    np.save(C.LOG_DIR / f"{args.model}_{args.split}_probs.npy", probs)
+    np.save(C.LOG_DIR / f"{args.model}_{args.split}{suffix}_probs.npy", probs)
 
 
 if __name__ == "__main__":

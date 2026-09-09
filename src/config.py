@@ -82,6 +82,19 @@ MODELS = {
         "weight_decay": 1e-5,
         "pretrained": True,
     },
+    # Same backbone at 456px. Microaneurysms are 10-20px in a full-resolution
+    # fundus image, so at 300px they are sub-pixel and effectively invisible -
+    # which is exactly what separates grade 1 from grade 2. The cached images
+    # are already 456px, so nothing needs re-preprocessing.
+    "efficientnet456": {
+        "arch": "efficientnet_b3",
+        "img_size": 456,
+        "batch_size": 8,      # 456^2 is 2.3x the pixels of 300^2
+        "epochs": 20,
+        "lr": 2e-4,           # lower, to suit the smaller batch
+        "weight_decay": 1e-5,
+        "pretrained": True,
+    },
     # Secondary transfer-learning model, useful as a third row in the
     # comparison table.
     "resnet": {

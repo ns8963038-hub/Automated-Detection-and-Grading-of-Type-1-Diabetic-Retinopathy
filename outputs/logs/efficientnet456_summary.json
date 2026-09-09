@@ -1,0 +1,12 @@
+{
+  "model_key": "efficientnet456",
+  "run_name": "efficientnet456",
+  "arch": "efficientnet_b3",
+  "optimizer": "adamw",
+  "activation": "relu",
+  "best_epoch": 14,
+  "best_val_qwk": 0.9186437380000755,
+  "epochs_run": 20,
+  "minutes": 91.47,
+  "params_millions": 10.7
+}

@@ -129,8 +129,40 @@ def train_one_epoch(model, loader, criterion, optimizer, device,
     return metrics
 
 
+# --------------------------------------------------------------------------
+# Test-time augmentation
+# --------------------------------------------------------------------------
+def dihedral(x: torch.Tensor, k: int) -> torch.Tensor:
+    """One of the eight symmetries of a square: 4 rotations x optional flip.
+
+    Safe for fundus photographs specifically because they have no canonical
+    orientation - left and right eyes are mirror images of each other, and the
+    camera rotation is arbitrary. The same set would be wrong for, say, chest
+    x-rays, where left and right are clinically distinct.
+    """
+    if k >= 4:
+        x = torch.flip(x, dims=[3])
+    return torch.rot90(x, k % 4, dims=[2, 3])
+
+
 @torch.no_grad()
-def evaluate(model, loader, criterion, device, desc: str = "val"):
+def tta_probabilities(model, images: torch.Tensor, n_aug: int = 8) -> torch.Tensor:
+    """Average softmax probabilities over `n_aug` dihedral views.
+
+    Averaging probabilities rather than logits: logits are unnormalised, so one
+    view that happens to be confident would dominate the mean rather than
+    contributing one vote.
+    """
+    total = None
+    for k in range(n_aug):
+        probs = torch.softmax(model(dihedral(images, k)), dim=1)
+        total = probs if total is None else total + probs
+    return total / n_aug
+
+
+@torch.no_grad()
+def evaluate(model, loader, criterion, device, desc: str = "val",
+             tta: int = 0):
     model.eval()
     running_loss, seen = 0.0, 0
     logits_all, labels_all = [], []
@@ -145,13 +177,18 @@ def evaluate(model, loader, criterion, device, desc: str = "val"):
         bs = labels.size(0)
         running_loss += loss.item() * bs
         seen += bs
-        logits_all.append(outputs.cpu())
+        # With TTA the stored scores are already averaged probabilities; the
+        # loss above stays on the single un-augmented view so it remains
+        # comparable to training.
+        scores = (tta_probabilities(model, images, tta) if tta
+                  else torch.softmax(outputs, dim=1))
+        logits_all.append(scores.cpu())
         labels_all.append(labels.cpu())
 
-    logits = torch.cat(logits_all)
+    probs_t = torch.cat(logits_all)
     y_true = torch.cat(labels_all).numpy()
-    y_pred = logits.argmax(1).numpy()
-    probs = torch.softmax(logits, dim=1).numpy()
+    y_pred = probs_t.argmax(1).numpy()
+    probs = probs_t.numpy()
 
     metrics = compute_metrics(y_true, y_pred)
     metrics.update(referable_dr_metrics(y_true, y_pred))
