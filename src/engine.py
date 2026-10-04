@@ -39,8 +39,8 @@ def referable_dr_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     ophthalmologist. This is the decision a screening tool actually drives, so
     its sensitivity is the number a clinical reader cares about most.
     """
-    t = (y_true >= 2).astype(int)
-    p = (y_pred >= 2).astype(int)
+    t = (y_true >= C.REFERABLE_GRADE).astype(int)
+    p = (y_pred >= C.REFERABLE_GRADE).astype(int)
     prec, rec, f1, _ = precision_recall_fscore_support(
         t, p, average="binary", zero_division=0
     )

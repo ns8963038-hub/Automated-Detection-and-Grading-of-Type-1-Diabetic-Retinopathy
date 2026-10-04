@@ -117,7 +117,7 @@ def predict(image_rgb: np.ndarray, model_key: str = C.DEFAULT_MODEL,
         "short_label": C.CLASS_SHORT[pred],
         "confidence": float(probs[pred]),
         "probabilities": probs.astype(float).tolist(),
-        "referable": bool(pred >= 2),
+        "referable": bool(pred >= C.REFERABLE_GRADE),
         **GRADE_STATUS[int(pred)],
     })
     return result

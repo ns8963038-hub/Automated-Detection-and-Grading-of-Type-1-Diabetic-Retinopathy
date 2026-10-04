@@ -38,6 +38,15 @@ CLASS_NAMES = [
 # Short labels for plots
 CLASS_SHORT = ["No DR", "Mild", "Moderate", "Severe", "Proliferative"]
 
+# Grade 2 and above is "referable DR": the point at which a screening
+# programme sends the patient to an ophthalmologist. The prediction output,
+# the evaluation metrics and the hospital suggestions all read this one
+# constant, so they can never disagree about where the line falls.
+REFERABLE_GRADE = 2
+
+# Sample specialist directory used for referral suggestions (all fictional).
+HOSPITAL_DIRECTORY = ROOT / "data" / "hospital_directory.json"
+
 # --------------------------------------------------------------------------
 # Preprocessing -- stage 2
 # --------------------------------------------------------------------------

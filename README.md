@@ -16,7 +16,7 @@ severity grade from 0 to 4, with a Grad-CAM heatmap explaining each decision.
 | 4 | CNN model | `src/models.py` |
 | 5 | Feature extraction | `src/models.py` (backbone) |
 | 6 | Classification | `src/models.py` (head), `src/engine.py` |
-| 7 | DR grade / prediction | `src/predict.py`, `app/app.py` |
+| 7 | DR grade / prediction, plus specialist referral for grades 2-4 | `src/predict.py`, `src/referral.py`, `app/app.py` |
 
 ## Grading scale
 
@@ -415,6 +415,61 @@ happen in the test set, and the app reports the sparse case explicitly rather
 than inventing an explanation. Training a genuine lesion detector would need a
 pixel-annotated dataset such as IDRiD.
 
+## Specialist referral (grades 2-4)
+
+When an image is graded **2, 3 or 4** - referable DR - the app suggests where
+to go next: the best-matched hospital from a directory of five, with the
+doctors there who suit that grade and their numbers. Grades 0 and 1 get no
+suggestion, because they call for routine re-screening rather than a
+specialist.
+
+![Specialist referral panel](docs/referral_panel.png)
+
+**"Best" is defined by severity, not by size.** Each grade has services a
+hospital *must* offer, services that earn extra points, and a primary
+specialty that earns one point per doctor on staff:
+
+| Grade | Urgency | Must offer | Extra points for | Primary specialist | Best match |
+|---|---|---|---|---|---|
+| 2 Moderate | Routine | eye care | diabetic eye clinic (+3), medical retina (+1) | Medical retina | Anvaya Diabetes & Eye Care Centre |
+| 3 Severe | Prompt | medical retina **and** laser | anti-VEGF (+2), diabetic eye clinic (+1) | Medical retina | Vaidurya Retina Centre |
+| 4 Proliferative | Urgent | laser **and** vitreoretinal surgery | 24x7 emergency (+3), anti-VEGF (+2) | Vitreoretinal surgeon | Kaustubha Eye Institute |
+
+The "must offer" column is a hard filter: proliferative DR may need surgery,
+so a hospital that cannot operate is never suggested for grade 4, however
+well it scores otherwise. Only 2 of the 5 hospitals qualify there; for grade
+3, two are excluded for having no laser. Every point traces back to a named
+service or a doctor, so any suggestion can be explained.
+
+```bash
+python -m src.referral --grade 4     # ranked suggestions on the command line
+```
+
+The directory lives in `data/hospital_directory.json` - 5 hospitals, 5 doctors
+each - and is validated on load: unknown specialties or services, duplicate
+ids and missing fields are rejected. **Every hospital, doctor and number in it
+is fictional.** Numbers use the `+91 80 0XXX XXXX` pattern; Indian subscriber
+numbers do not begin with 0, so they should not reach a real line, and the
+validator rejects anything outside that range so a real-looking number cannot
+be typed in by accident. The app labels the panel as sample data.
+
+The referable threshold is one constant, `REFERABLE_GRADE` in
+`src/config.py`, shared by the prediction output, the evaluation metrics and
+the referral logic, so the app can never say "Referable" and then show no
+hospitals.
+
+## Tests
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+21 tests cover the referral feature: the review's specification (5 hospitals,
+5 doctors each, suggestions only for grades 2-4), the ranking (every
+suggestion offers the required services; doctors suit the grade; order is
+deterministic) and the validator (it rejects a real-looking phone number,
+unknown specialties, duplicate ids and missing fields).
+
 ## Project layout
 
 ```
@@ -435,7 +490,10 @@ src/
   gradcam.py          Grad-CAM: where the model looked
   lesions.py          what is there: lesion detection + enrichment
   predict.py          single-image inference
+  referral.py         specialist suggestions for grades 2-4
 app/app.py            Streamlit demo
+data/hospital_directory.json  sample hospital directory (fictional)
+tests/                unit tests
 docs/SETUP_WINDOWS.md Windows setup guide
 outputs/              figures and metrics (weights via release)
 ```

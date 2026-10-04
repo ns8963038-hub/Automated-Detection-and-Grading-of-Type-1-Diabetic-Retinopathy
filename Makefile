@@ -1,6 +1,6 @@
 PY := .venv/bin/python
 
-.PHONY: help setup download preprocess eda train-baseline train-effnet train eval compare ablate app smoke clean all
+.PHONY: help setup download preprocess eda train-baseline train-effnet train eval compare ablate app smoke test clean all
 
 help:
 	@echo "make setup           create venv and install dependencies"
@@ -13,6 +13,7 @@ help:
 	@echo "make compare         build the model comparison table + figure"
 	@echo "make ablate          sweep optimizers (and activations) on the baseline"
 	@echo "make app             launch the Streamlit demo"
+	@echo "make test            run the unit tests"
 
 setup:
 	python3.14 -m venv .venv
@@ -53,6 +54,9 @@ all: preprocess eda train eval compare
 
 app:
 	.venv/bin/streamlit run app/app.py
+
+test:
+	$(PY) -m unittest discover -s tests -v
 
 clean:
 	rm -rf outputs/models/*.pt outputs/logs/* outputs/figures/*

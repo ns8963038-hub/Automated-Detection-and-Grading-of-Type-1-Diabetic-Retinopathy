@@ -364,6 +364,8 @@ size and label noise rather than model capacity or image detail.</div>
       CNN against a pretrained backbone under identical conditions.</li>
   <li>Explain each prediction — both <i>where</i> the network looked and
       <i>what</i> is in that region.</li>
+  <li>For referable grades (2-4), suggest the best-matched specialist
+      hospital with doctor names and contact numbers.</li>
   <li>Run entirely on local hardware, with no dependency on cloud GPUs.</li>
 </ol>
 
@@ -718,6 +720,48 @@ decision, the preprocessing steps, a Grad-CAM overlay and the lesion
 analysis.</p>
 {fig("../docs/app_screenshot.png", "The demo application. The result appears first, above the images, because it is what the user came for.", 1500)}
 
+<h3>Specialist referral for grades 2-4</h3>
+<p>When the predicted grade is 2, 3 or 4 &mdash; referable DR &mdash; the app
+suggests where the patient should go next: the best-matched hospital from a
+directory of five, with the doctors there who suit that grade and their
+contact numbers. Grades 0 and 1 receive no suggestion, because they call for
+routine re-screening rather than a specialist.</p>
+
+<p><b>"Best" is defined by severity, not by size.</b> Each grade specifies
+services a hospital must offer, services that earn extra points, and a primary
+specialty that earns one point per doctor of that kind on staff. The highest
+total is the best match.</p>
+{rows([
+ ["2 &mdash; Moderate", "Routine", "Eye care", "Diabetic eye clinic (+3), medical retina (+1)", "Medical retina", "Anvaya Diabetes &amp; Eye Care Centre"],
+ ["3 &mdash; Severe", "Prompt", "Medical retina <b>and</b> laser", "Anti-VEGF (+2), diabetic eye clinic (+1)", "Medical retina", "Vaidurya Retina Centre"],
+ ["4 &mdash; Proliferative", "Urgent", "Laser <b>and</b> vitreoretinal surgery", "24&times;7 emergency (+3), anti-VEGF (+2)", "Vitreoretinal surgeon", "Kaustubha Eye Institute"],
+], ["Grade", "Urgency", "Must offer", "Extra points for", "Primary specialist", "Best match"])}
+
+<p>The "must offer" column is a hard filter. Proliferative DR may need
+surgery, so a hospital that cannot operate is never suggested for grade 4
+however well it scores otherwise &mdash; only two of the five qualify. For
+grade 3, two hospitals are excluded for offering no laser treatment. Because
+every point traces back to a named service or a doctor, any suggestion can be
+explained. Ranking is deterministic: ties are broken by the number of primary
+specialists, then by the most experienced suitable doctor.</p>
+
+{fig("referral_panel.png", "The referral panel for a grade 4 image: urgency and clinical advice, the best-matched hospital with the reasons it was chosen, and the doctors there who suit the grade. Other suitable hospitals and the full directory sit below.", 1300)}
+
+<p>The directory is stored as structured data in
+<code>data/hospital_directory.json</code> and validated on load: unknown
+specialties or services, duplicate identifiers and missing fields are
+rejected. The referable threshold is a single constant shared by the
+prediction output, the evaluation metrics and the referral logic, so the app
+cannot label an image "Referable" and then show no hospitals. Twenty-one unit
+tests cover the specification, the ranking and the validation.</p>
+
+<div class="note"><b>Sample data.</b> Every hospital, doctor and phone number
+in the directory is fictional, as permitted for this demonstration, and the
+app labels the panel accordingly. Phone numbers use the
+<code>+91 80 0XXX XXXX</code> pattern: Indian subscriber numbers do not begin
+with 0, so they should not reach a real line, and the validator rejects any
+number outside that range.</div>
+
 <h2 id="s14">14 &nbsp; Repository structure</h2>
 <pre><code>src/
   config.py            All hyperparameters, paths and grade definitions
@@ -736,7 +780,10 @@ analysis.</p>
   gradcam.py           Grad-CAM implementation
   lesions.py           Lesion detection and attention enrichment
   predict.py           Single-image inference
+  referral.py          Specialist suggestions for grades 2-4
 app/app.py             Streamlit demo
+data/hospital_directory.json   Sample hospital directory (fictional)
+tests/                 Unit tests
 notebooks/             Pipeline walkthrough notebook
 docs/                  Architecture diagram, Windows guide, this document
 outputs/figures/       Report figures
@@ -814,6 +861,9 @@ the ImageNet weights.</p>
  ["Grad-CAM", "Gradient-weighted Class Activation Mapping — a heatmap of the regions that raised the predicted class score."],
  ["Stratified split", "A split preserving each class's proportion across train, validation and test."],
  ["Data leakage", "When information from the test set influences training — here, duplicate photographs spanning splits."],
+ ["Retinal laser treatment", "Laser photocoagulation of the retina, used to slow abnormal vessel growth in severe and proliferative DR."],
+ ["Anti-VEGF injection", "A drug injected into the eye that blocks the growth signal for abnormal, leaky blood vessels."],
+ ["Vitreoretinal surgery", "Surgery on the vitreous gel and retina (vitrectomy), needed for complications of proliferative DR such as bleeding or retinal detachment."],
 ], ["Term", "Meaning"])}
 
 <div class="note" style="margin-top:20pt"><b>Disclaimer.</b> Research

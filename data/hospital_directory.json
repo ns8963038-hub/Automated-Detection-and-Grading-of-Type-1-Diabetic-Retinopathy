@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "title": "Sample specialist directory for referable diabetic retinopathy",
+    "fictional": true,
+    "note": "Every hospital, doctor and phone number in this file is invented for demonstration. Phone numbers use the +91 80 0XXX XXXX pattern: Indian subscriber numbers do not begin with 0, which is the trunk prefix, so these should not reach a real line. Localities are real Bengaluru neighbourhoods, used only to make the sample read naturally."
+  },
+  "hospitals": [
+    {
+      "id": "kaustubha",
+      "name": "Kaustubha Eye Institute",
+      "type": "Tertiary eye institute",
+      "area": "Malleshwaram",
+      "city": "Bengaluru",
+      "phone": "+91 80 0101 0100",
+      "hours": "Open 24 hours",
+      "capabilities": ["ophthalmology", "medical_retina", "laser", "anti_vegf", "vitrectomy", "emergency_24x7"],
+      "doctors": [
+        {"name": "Dr. Arjun Hegde", "specialty": "Vitreoretinal Surgeon", "qualifications": "MBBS, MS (Ophthalmology), Fellowship in Vitreoretinal Surgery", "experience_years": 18, "availability": "Mon–Sat, 9:00 AM – 5:00 PM", "phone": "+91 80 0101 0101"},
+        {"name": "Dr. Meera Krishnan", "specialty": "Vitreoretinal Surgeon", "qualifications": "MBBS, MS (Ophthalmology), Fellowship in Vitreoretinal Surgery", "experience_years": 12, "availability": "Mon–Fri, 10:00 AM – 6:00 PM", "phone": "+91 80 0101 0102"},
+        {"name": "Dr. Sameer Kulkarni", "specialty": "Medical Retina Specialist", "qualifications": "MBBS, MS (Ophthalmology), Fellowship in Medical Retina", "experience_years": 15, "availability": "Mon–Sat, 9:00 AM – 3:00 PM", "phone": "+91 80 0101 0103"},
+        {"name": "Dr. Lakshmi Narayan", "specialty": "Medical Retina Specialist", "qualifications": "MBBS, MS (Ophthalmology), Fellowship in Medical Retina", "experience_years": 9, "availability": "Tue–Sun, 11:00 AM – 7:00 PM", "phone": "+91 80 0101 0104"},
+        {"name": "Dr. Kiran Gowda", "specialty": "General Ophthalmologist", "qualifications": "MBBS, MS (Ophthalmology)", "experience_years": 7, "availability": "Mon–Sat, 8:00 AM – 2:00 PM", "phone": "+91 80 0101 0105"}
+      ]
+    },
+    {
+      "id": "vaidurya",
+      "name": "Vaidurya Retina Centre",
+      "type": "Specialist retina centre",
+      "area": "Indiranagar",
+      "city": "Bengaluru",
+      "phone": "+91 80 0202 0200",
+      "hours": "Mon–Sat, 9:00 AM – 7:00 PM",
+      "capabilities": ["ophthalmology", "medical_retina", "laser", "anti_vegf", "vitrectomy"],
+      "doctors": [
+        {"name": "Dr. Priya Raghavan", "specialty": "Medical Retina Specialist", "qualifications": "MBBS, MS (Ophthalmology), Fellowship in Medical Retina", "experience_years": 21, "availability": "Mon–Sat, 9:00 AM – 5:00 PM", "phone": "+91 80 0202 0201"},
+        {"name": "Dr. Faisal Ahmed", "specialty": "Vitreoretinal Surgeon", "qualifications": "MBBS, MS (Ophthalmology), Fellowship in Vitreoretinal Surgery", "experience_years": 16, "availability": "Mon–Fri, 10:00 AM – 6:00 PM", "phone": "+91 80 0202 0202"},
+        {"name": "Dr. Divya Shenoy", "specialty": "Medical Retina Specialist", "qualifications": "MBBS, MS (Ophthalmology), Fellowship in Medical Retina", "experience_years": 11, "availability": "Mon–Sat, 10:00 AM – 4:00 PM", "phone": "+91 80 0202 0203"},
+        {"name": "Dr. Rohan Menon", "specialty": "Vitreoretinal Surgeon", "qualifications": "MBBS, MS (Ophthalmology), Fellowship in Vitreoretinal Surgery", "experience_years": 8, "availability": "Tue–Sat, 9:00 AM – 5:00 PM", "phone": "+91 80 0202 0204"},
+        {"name": "Dr. Ananya Iyer", "specialty": "Medical Retina Specialist", "qualifications": "MBBS, MS (Ophthalmology), Fellowship in Medical Retina", "experience_years": 6, "availability": "Mon–Fri, 12:00 PM – 8:00 PM", "phone": "+91 80 0202 0205"}
+      ]
+    },
+    {
+      "id": "mandara",
+      "name": "Mandara Multispeciality Hospital",
+      "type": "Multispeciality hospital, eye department",
+      "area": "Whitefield",
+      "city": "Bengaluru",
+      "phone": "+91 80 0303 0300",
+      "hours": "Mon–Sun, 8:00 AM – 8:00 PM",
+      "capabilities": ["ophthalmology", "medical_retina", "laser", "anti_vegf"],
+      "doctors": [
+        {"name": "Dr. Vikram Reddy", "specialty": "Medical Retina Specialist", "qualifications": "MBBS, MS (Ophthalmology), Fellowship in Medical Retina", "experience_years": 14, "availability": "Mon–Sat, 9:00 AM – 4:00 PM", "phone": "+91 80 0303 0301"},
+        {"name": "Dr. Neha Joshi", "specialty": "Medical Retina Specialist", "qualifications": "MBBS, MS (Ophthalmology), Fellowship in Medical Retina", "experience_years": 10, "availability": "Mon–Fri, 11:00 AM – 7:00 PM", "phone": "+91 80 0303 0302"},
+        {"name": "Dr. Suresh Babu", "specialty": "General Ophthalmologist", "qualifications": "MBBS, MS (Ophthalmology)", "experience_years": 19, "availability": "Mon–Sat, 8:00 AM – 2:00 PM", "phone": "+91 80 0303 0303"},
+        {"name": "Dr. Rukhsar Ali", "specialty": "General Ophthalmologist", "qualifications": "MBBS, MS (Ophthalmology)", "experience_years": 8, "availability": "Mon–Sat, 2:00 PM – 8:00 PM", "phone": "+91 80 0303 0304"},
+        {"name": "Dr. Manoj Pillai", "specialty": "General Ophthalmologist", "qualifications": "MBBS, MS (Ophthalmology)", "experience_years": 5, "availability": "Sun–Thu, 9:00 AM – 5:00 PM", "phone": "+91 80 0303 0305"}
+      ]
+    },
+    {
+      "id": "kshitija",
+      "name": "Kshitija Community Eye Hospital",
+      "type": "Community eye hospital",
+      "area": "Banashankari",
+      "city": "Bengaluru",
+      "phone": "+91 80 0404 0400",
+      "hours": "Mon–Sat, 8:00 AM – 6:00 PM",
+      "capabilities": ["ophthalmology", "medical_retina"],
+      "doctors": [
+        {"name": "Dr. Shruti Bhat", "specialty": "Medical Retina Specialist", "qualifications": "MBBS, MS (Ophthalmology), Fellowship in Medical Retina", "experience_years": 9, "availability": "Mon–Sat, 9:00 AM – 3:00 PM", "phone": "+91 80 0404 0401"},
+        {"name": "Dr. Ramesh Naik", "specialty": "General Ophthalmologist", "qualifications": "MBBS, MS (Ophthalmology)", "experience_years": 22, "availability": "Mon–Sat, 8:00 AM – 2:00 PM", "phone": "+91 80 0404 0402"},
+        {"name": "Dr. Kavya Murthy", "specialty": "General Ophthalmologist", "qualifications": "MBBS, MS (Ophthalmology)", "experience_years": 12, "availability": "Mon–Fri, 10:00 AM – 6:00 PM", "phone": "+91 80 0404 0403"},
+        {"name": "Dr. Imran Qureshi", "specialty": "General Ophthalmologist", "qualifications": "MBBS, MS (Ophthalmology)", "experience_years": 6, "availability": "Tue–Sat, 12:00 PM – 6:00 PM", "phone": "+91 80 0404 0404"},
+        {"name": "Dr. Pooja Desai", "specialty": "General Ophthalmologist", "qualifications": "MBBS, MS (Ophthalmology)", "experience_years": 4, "availability": "Mon–Sat, 9:00 AM – 1:00 PM", "phone": "+91 80 0404 0405"}
+      ]
+    },
+    {
+      "id": "anvaya",
+      "name": "Anvaya Diabetes & Eye Care Centre",
+      "type": "Diabetes and eye care centre",
+      "area": "Jayanagar",
+      "city": "Bengaluru",
+      "phone": "+91 80 0505 0500",
+      "hours": "Mon–Sat, 7:00 AM – 7:00 PM",
+      "capabilities": ["ophthalmology", "diabetic_eye_clinic", "medical_retina"],
+      "doctors": [
+        {"name": "Dr. Nandini Rao", "specialty": "Medical Retina Specialist", "qualifications": "MBBS, MS (Ophthalmology), Fellowship in Medical Retina", "experience_years": 13, "availability": "Mon–Sat, 8:00 AM – 2:00 PM", "phone": "+91 80 0505 0501"},
+        {"name": "Dr. Harish Kamath", "specialty": "Medical Retina Specialist", "qualifications": "MBBS, MS (Ophthalmology), Fellowship in Medical Retina", "experience_years": 10, "availability": "Mon–Fri, 2:00 PM – 7:00 PM", "phone": "+91 80 0505 0502"},
+        {"name": "Dr. Sneha Patil", "specialty": "General Ophthalmologist", "qualifications": "MBBS, MS (Ophthalmology)", "experience_years": 9, "availability": "Mon–Sat, 9:00 AM – 5:00 PM", "phone": "+91 80 0505 0503"},
+        {"name": "Dr. Joseph Mathew", "specialty": "General Ophthalmologist", "qualifications": "MBBS, MS (Ophthalmology)", "experience_years": 15, "availability": "Mon–Sat, 7:00 AM – 1:00 PM", "phone": "+91 80 0505 0504"},
+        {"name": "Dr. Aisha Siddiqui", "specialty": "General Ophthalmologist", "qualifications": "MBBS, MS (Ophthalmology)", "experience_years": 5, "availability": "Tue–Sun, 10:00 AM – 4:00 PM", "phone": "+91 80 0505 0505"}
+      ]
+    }
+  ]
+}

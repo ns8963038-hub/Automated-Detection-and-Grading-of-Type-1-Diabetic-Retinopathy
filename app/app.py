@@ -6,6 +6,7 @@ Run:  .venv/bin/streamlit run app/app.py
 """
 from __future__ import annotations
 
+import html
 import sys
 from pathlib import Path
 
@@ -19,6 +20,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src import config as C
 from src.predict import GRADE_STATUS, available_models, load_model, predict
+from src.referral import (CAPABILITIES, Match, Referral, load_directory,
+                          recommend)
 
 st.set_page_config(
     page_title="DR Grading",
@@ -184,6 +187,61 @@ def build_css(dark: bool) -> str:
 }}
 .dr-why {{ font-size: 12.5px; color: var(--ink-3); margin: 2px 0 0 23px; }}
 
+/* ---------- referral ---------- */
+.dr-ref-head {{
+  display: flex; align-items: flex-start; gap: 12px; margin: 2px 0 14px;
+}}
+.dr-ref-head .tag {{
+  font-size: 11px; font-weight: 800; letter-spacing: 0.07em;
+  text-transform: uppercase; padding: 4px 10px; border-radius: 5px;
+  background: var(--accent); color: #fff; flex-shrink: 0; margin-top: 1px;
+}}
+.dr-ref-head .adv {{ font-size: 14px; color: var(--ink-2); line-height: 1.5; }}
+.dr-hosp {{
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 18px 22px 6px; background: var(--raised);
+}}
+.dr-hosp.best {{
+  border: 1.5px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}}
+.dr-best {{
+  display: inline-block; font-size: 10.5px; font-weight: 800;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent);
+  border: 1px solid var(--accent); border-radius: 999px;
+  padding: 2px 9px; margin-bottom: 9px;
+}}
+.dr-hosp .hn {{
+  font-size: 20px; font-weight: 700; color: var(--ink); line-height: 1.25;
+}}
+.dr-hosp .hm {{ font-size: 13px; color: var(--ink-2); margin-top: 3px; }}
+.dr-hosp .hp {{ font-size: 13.5px; color: var(--ink-2); margin-top: 6px; }}
+.dr-hosp .hp b {{ color: var(--ink); font-variant-numeric: tabular-nums; }}
+.dr-tags {{ display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 14px; }}
+.dr-tag {{
+  font-size: 12px; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--ink-2);
+}}
+.dr-docs-h {{
+  font-size: 11px; color: var(--ink-3); text-transform: uppercase;
+  letter-spacing: 0.08em; font-weight: 700; margin-bottom: 2px;
+}}
+.dr-doc {{
+  display: flex; justify-content: space-between; gap: 18px;
+  padding: 11px 0; border-top: 1px solid var(--border);
+}}
+.dr-doc .dn {{ font-size: 14.5px; font-weight: 700; color: var(--ink); }}
+.dr-doc .ds {{ font-size: 13px; color: var(--ink-2); margin-top: 1px; }}
+.dr-doc .dq {{ font-size: 12px; color: var(--ink-3); margin-top: 2px; }}
+.dr-doc .side {{ text-align: right; flex-shrink: 0; }}
+.dr-doc .dp {{
+  font-size: 14px; font-weight: 600; color: var(--ink);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}}
+.dr-doc .dx {{
+  font-size: 12px; color: var(--ink-3); margin-top: 2px; white-space: nowrap;
+}}
+
 /* ---------- misc ---------- */
 .dr-step {{
   font-size: 12px; color: var(--ink-3); text-transform: uppercase;
@@ -252,6 +310,66 @@ def legend_row(grade: int) -> str:
 def caption(step: str, text: str) -> str:
     return f'<div class="dr"><div class="dr-step">{step}</div>' \
            f'<div style="font-size:13px;color:var(--ink-2)">{text}</div></div>'
+
+
+def referral_head(ref: Referral, accent: str) -> str:
+    return (
+        f'<div class="dr" style="--accent:{accent}"><div class="dr-ref-head">'
+        f'<span class="tag">{html.escape(ref.rule.urgency)}</span>'
+        f'<span class="adv">{html.escape(ref.rule.advice)}</span>'
+        f"</div></div>"
+    )
+
+
+def hospital_card(match: Match, accent: str, best: bool = False) -> str:
+    """One hospital with the reasons it was chosen and its suited doctors."""
+    h, esc = match.hospital, html.escape
+    tags = "".join(f'<span class="dr-tag">{esc(r)}</span>' for r in match.reasons)
+    doctors = "".join(
+        f'<div class="dr-doc"><div>'
+        f'<div class="dn">{esc(d.name)}</div>'
+        f'<div class="ds">{esc(d.specialty)} &middot; '
+        f"{d.experience_years} years' experience</div>"
+        f'<div class="dq">{esc(d.qualifications)}</div>'
+        f'</div><div class="side">'
+        f'<div class="dp">{esc(d.phone)}</div>'
+        f'<div class="dx">{esc(d.availability)}</div>'
+        f"</div></div>"
+        for d in match.doctors
+    )
+    return (
+        f'<div class="dr" style="--accent:{accent}">'
+        f'<div class="dr-hosp{" best" if best else ""}">'
+        + ('<div class="dr-best">Best match</div>' if best else "")
+        + f'<div class="hn">{esc(h.name)}</div>'
+        f'<div class="hm">{esc(h.kind)} &middot; {esc(h.location)} &middot; '
+        f"{esc(h.hours)}</div>"
+        f'<div class="hp">Reception <b>{esc(h.phone)}</b></div>'
+        f'<div class="dr-tags">{tags}</div>'
+        f'<div class="dr-docs-h">Suggested doctors</div>{doctors}'
+        f"</div></div>"
+    )
+
+
+def directory_tables() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """The whole backend directory, for the review to inspect directly."""
+    hospitals = load_directory()
+    # Services come first and leave out general eye care: every hospital
+    # offers it, so as the leading entry it filled the visible width of the
+    # column while saying nothing that tells the hospitals apart.
+    hosp = pd.DataFrame([{
+        "Hospital": h.name,
+        "Services": [CAPABILITIES[c] for c in CAPABILITIES
+                     if c in h.capabilities and c != "ophthalmology"],
+        "Area": h.area, "Reception": h.phone, "Hours": h.hours,
+        "Type": h.kind,
+    } for h in hospitals])
+    docs = pd.DataFrame([{
+        "Doctor": d.name, "Specialty": d.specialty, "Hospital": h.name,
+        "Experience (yrs)": d.experience_years,
+        "Availability": d.availability, "Phone": d.phone,
+    } for h in hospitals for d in h.doctors])
+    return hosp, docs
 
 
 # --------------------------------------------------------------------------
@@ -399,6 +517,58 @@ with right:
             }),
             hide_index=True, width="stretch",
         )
+
+# --- where to go next: referable grades only -----------------------------
+# Grades 0 and 1 call for routine re-screening, so no specialist is
+# suggested; recommend() returns None for them.
+try:
+    referral = recommend(res["grade"])
+    referral_error = None
+except (OSError, ValueError) as exc:          # missing or malformed directory
+    referral, referral_error = None, exc
+
+if referral_error is not None and res["referable"]:
+    st.divider()
+    st.warning(f"Specialist suggestions are unavailable: {referral_error}")
+elif referral is not None:
+    accent = GRADE_STATUS[res["grade"]]["color"]
+    st.divider()
+    st.subheader("Where to go next")
+    st.markdown(referral_head(referral, accent), unsafe_allow_html=True)
+
+    if referral.best is None:
+        st.info("No hospital in the directory offers the services this "
+                "grade needs.")
+    else:
+        st.markdown(hospital_card(referral.best, accent, best=True),
+                    unsafe_allow_html=True)
+        if referral.others:
+            st.markdown(
+                '<div class="dr"><div class="dr-step" style="margin-top:18px">'
+                "Other suitable hospitals</div></div>",
+                unsafe_allow_html=True,
+            )
+            for m in referral.others:
+                with st.expander(f"{m.hospital.name} · {m.hospital.area}"):
+                    st.markdown(hospital_card(m, accent),
+                                unsafe_allow_html=True)
+
+    with st.expander("Full hospital directory"):
+        hosp_df, doc_df = directory_tables()
+        t1, t2 = st.tabs([f"Hospitals ({len(hosp_df)})",
+                          f"Doctors ({len(doc_df)})"])
+        t1.dataframe(hosp_df, hide_index=True, width="stretch",
+                     column_config={"Services": st.column_config.ListColumn(
+                         "Services", width="large")})
+        t2.dataframe(doc_df, hide_index=True, width="stretch")
+
+    st.markdown(
+        '<div class="dr"><div class="dr-note" style="margin-top:10px">'
+        "Sample directory: the hospitals, doctors and phone numbers above are "
+        "fictional, for demonstration only."
+        "</div></div>",
+        unsafe_allow_html=True,
+    )
 
 st.divider()
 
