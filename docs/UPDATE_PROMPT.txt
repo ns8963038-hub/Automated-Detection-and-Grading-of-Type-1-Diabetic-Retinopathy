@@ -1,0 +1,114 @@
+Update an existing, working Python project on this Windows laptop to a newer
+version, then run it. Work through the steps in order, verify each one, and
+tell me what you find rather than assuming. Do not delete anything.
+
+WHAT IS ALREADY ON THIS MACHINE
+- The project is already set up and working in a folder whose name ends in
+  "-main" (Automated-Detection-and-Grading-of-Type-1-Diabetic-Retinopathy-main).
+  That folder contains a .venv virtual environment with all packages
+  installed, trained model weights in outputs\models\, and a dataset of
+  fundus images in data\raw\train_images\. These took a long time to set up
+  and must survive the update untouched.
+- A NEWER ZIP of the same project has been downloaded into the Downloads
+  folder. If there are several ZIPs with that name (for example one ending
+  in "(1)"), the newest by modified date is the one to use.
+- Git is NOT installed. Do not use git commands.
+- OneDrive folder redirection may be on, so the Desktop may be at
+  C:\Users\<name>\OneDrive\Desktop rather than C:\Users\<name>\Desktop.
+  Search for folders instead of assuming paths, and report the real paths.
+
+STEP 1 - STOP THE APP IF IT IS RUNNING
+If a Streamlit app from this project is running (a terminal running
+"streamlit run app/app.py" or run_app.bat), stop it with Ctrl+C or close
+that window. Files cannot be replaced cleanly while it runs.
+
+STEP 2 - FIND THE EXISTING PROJECT FOLDER
+Search the user profile for the project folder:
+    cd %USERPROFILE%
+    dir /s /b /ad *Diabetic-Retinopathy*
+The correct folder is the one that contains ALL of these:
+    .venv\    src\predict.py    app\app.py
+Ignore any folder inside Downloads or any folder without .venv. Report the
+full path. If no folder contains .venv, STOP and tell me.
+
+STEP 3 - FIND THE NEW ZIP
+List the project ZIPs in Downloads, newest first, and report the name and
+modified date of the one you will use:
+    powershell -NoProfile -Command "Get-ChildItem $env:USERPROFILE\Downloads -Filter 'Automated-Detection-and-Grading-of-Type-1-Diabetic-Retinopathy*.zip' | Sort-Object LastWriteTime -Descending | Select-Object Name, LastWriteTime"
+
+STEP 4 - EXTRACT THE ZIP TO A TEMPORARY FOLDER
+Extract it somewhere temporary, NOT into the project folder:
+    powershell -NoProfile -Command "Expand-Archive -LiteralPath '<path to newest zip>' -DestinationPath $env:TEMP\dr_update -Force"
+Inside %TEMP%\dr_update there is ONE top-level folder ending in "-main".
+Confirm it contains app, src, docs, data, tests, README.md and run_app.bat.
+That inner folder is the source for the next step.
+
+STEP 5 - COPY THE NEW FILES OVER THE EXISTING PROJECT
+Copy the CONTENTS of that inner "-main" folder over the existing project
+folder found in step 2, overwriting files that have the same name and
+merging folders that already exist:
+    robocopy "<temp inner -main folder>" "<existing project folder>" /E
+Rules:
+- Do NOT use /MIR or /PURGE, and do not delete anything. The ZIP does not
+  contain .venv, outputs\models or data\raw, so a mirroring copy would
+  delete the installed packages, the trained model and the dataset.
+- Do not create a new project folder and do not copy the "-main" folder
+  itself into the project folder; copy what is inside it.
+- robocopy exit codes 0 to 7 mean success (1 means files were copied).
+  Only 8 or higher is a failure.
+
+STEP 6 - VERIFY THE UPDATE
+In the existing project folder, confirm that these NEW files now exist:
+    src\referral.py
+    data\hospital_directory.json
+    tests\test_referral.py
+And that these were NOT affected and still exist:
+    .venv\Scripts\python.exe
+    outputs\models\efficientnet_best.pt
+    data\raw\train_images\   (should still hold about 3,662 .png files)
+Report each one. If any of the three "still exist" items is missing, STOP
+and tell me before going further.
+
+STEP 7 - RUN THE TESTS
+From the project folder:
+    .venv\Scripts\activate
+    python -m unittest discover -s tests -v
+Expected result: "Ran 21 tests" and "OK". No new packages are needed for
+this update, so do not reinstall anything unless a test fails with an
+ImportError; only in that case run: pip install -r requirements.txt
+
+STEP 8 - CLEAN UP
+Delete only the temporary folder %TEMP%\dr_update. Leave the ZIP in
+Downloads and do not touch anything else.
+
+STEP 9 - RUN THE APP
+From the project folder, with the virtual environment active:
+    streamlit run app/app.py
+(Double-clicking run_app.bat in the project folder does the same.) It
+prints a local URL and opens http://localhost:8501 in the browser.
+
+WHAT SUCCESS LOOKS LIKE
+- The page is titled "Diabetic Retinopathy Grading" and the sidebar shows
+  "cpu" as the device, which is correct for this laptop.
+- In the "...or try a sample from the dataset" dropdown:
+    001639a390f0.png  -> grade 4 (Proliferative). A new section titled
+                         "Where to go next" appears below the result, with
+                         an "Urgent referral" tag and the best match
+                         "Kaustubha Eye Institute" plus its doctors.
+    000c1434d8d7.png  -> grade 2 (Moderate). "Where to go next" shows a
+                         "Routine referral" with "Anvaya Diabetes & Eye Care
+                         Centre".
+    002c21358ce6.png  -> grade 0 (No DR). There is NO "Where to go next"
+                         section. That is correct: hospitals are suggested
+                         only for grades 2, 3 and 4.
+- The first prediction can take a few seconds while the model loads.
+
+IF SOMETHING FAILS
+Report the exact error text and which step it happened on.
+- "No module named 'src'" or "Could not open requirements file": the
+  terminal is not in the project folder. Run dir and look for README.md.
+- "'streamlit' is not recognized": the virtual environment is not active.
+  Check that the prompt starts with (.venv).
+- No "Where to go next" section for 001639a390f0.png: the update did not
+  land. Check that src\referral.py exists in the project folder that is
+  actually being run.
