@@ -46,12 +46,21 @@ That inner folder is the source for the next step.
 STEP 5 - COPY THE NEW FILES OVER THE EXISTING PROJECT
 Copy the CONTENTS of that inner "-main" folder over the existing project
 folder found in step 2, overwriting files that have the same name and
-merging folders that already exist:
-    robocopy "<temp inner -main folder>" "<existing project folder>" /E
+merging folders that already exist. Use exactly this command, with the real
+paths filled in, and show me the final command before you run it:
+
+    robocopy "<temp inner -main folder>" "<project>" /E /XD "<project>\.venv" "<project>\data\raw" "<project>\outputs\models"
+
+Why it is built this way:
+- /E copies everything, including subfolders. It only ever adds and
+  overwrites files; it never deletes anything.
+- /XD lists the three folders that hold the installed packages, the trained
+  model and the dataset. robocopy skips excluded folders completely, so
+  they cannot be touched by this command in any way.
 Rules:
-- Do NOT use /MIR or /PURGE, and do not delete anything. The ZIP does not
+- Do NOT add /MIR or /PURGE, and do not delete anything. The ZIP does not
   contain .venv, outputs\models or data\raw, so a mirroring copy would
-  delete the installed packages, the trained model and the dataset.
+  treat all three as extra and delete them.
 - Do not create a new project folder and do not copy the "-main" folder
   itself into the project folder; copy what is inside it.
 - robocopy exit codes 0 to 7 mean success (1 means files were copied).
@@ -105,6 +114,15 @@ WHAT SUCCESS LOOKS LIKE
 
 IF SOMETHING FAILS
 Report the exact error text and which step it happened on.
+- If .venv, the model or the dataset is missing after step 5, nothing is
+  lost permanently. From the project folder:
+    .venv missing:      py -m venv .venv
+                        .venv\Scripts\activate
+                        pip install -r requirements.txt       (5-8 minutes)
+    model missing:      python -m src.download_weights        (about 60 MB)
+    dataset missing:    download the APTOS 2019 ZIP from Kaggle again and
+                        put its train_images folder at data\raw\train_images
+                        (or: kaggle auth login, then python -m src.download_data)
 - "No module named 'src'" or "Could not open requirements file": the
   terminal is not in the project folder. Run dir and look for README.md.
 - "'streamlit' is not recognized": the virtual environment is not active.
